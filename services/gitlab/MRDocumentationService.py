@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from llm_analysis.gitlab.MRDocumentationAnalysis import generate_documentation_with_llm
 from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
 from models.gitlab.CommitModels import CommitResponse
+from gcs_storage.MRDocumentationStorage import upload_mr_documentation
 
 load_dotenv()
 
@@ -31,6 +32,8 @@ async def process_merge_request_from_cicd(payload_data: dict):
         
         # Process documentation
         result = await create_mr_documentation(complete_mr_data)
+        if result:
+            upload_mr_documentation(complete_mr_data, result['MR Documentation'])
         return result
         
     except Exception as e:
@@ -69,23 +72,28 @@ async def enrich_mr_data_from_api(mr_request: MRDocumentationRequest, mr_iid) ->
         if response.status_code == 200:
             mr_data = response.json()
             
-            # Create complete MR request with API data
-            return MRDocumentationRequest(
-                project_id=mr_request.project_id,
-                mr_iid=mr_iid,
-                labels=[label for label in mr_data.get('labels', [])],
-                source_branch=mr_data.get('source_branch', mr_request.source_branch),
-                target_branch=mr_data.get('target_branch', mr_request.target_branch),
-                title=mr_data.get('title', mr_request.title),
-                description=mr_data.get('description', ''),
-                author=mr_data.get('author', {}).get('name', 'Unknown'),
-                merged_by=mr_request.merged_by,  # Keep from CI/CD
-                assignees=[assignee.get('name') for assignee in mr_data.get('assignees', [])],
-                commit_sha=mr_request.commit_sha
-            )
-        else:
-            # If API call fails, return original minimal data
+            # Update existing object with API data
+            mr_request.mr_iid = mr_iid
+            mr_request.labels = [label for label in mr_data.get('labels', [])]
+            mr_request.source_branch = mr_data.get('source_branch', mr_request.source_branch)
+            mr_request.target_branch = mr_data.get('target_branch', mr_request.target_branch)
+            mr_request.title = mr_data.get('title', mr_request.title)
+            mr_request.description = mr_data.get('description', mr_request.description or '')
+            mr_request.author = mr_data.get('author', {}).get('name', mr_request.author or 'Unknown')
+            mr_request.assignees = [assignee.get('name') for assignee in mr_data.get('assignees', [])]
+            
+            # Keep existing values that shouldn't be overwritten
+            # mr_request.merged_by stays as is from CI/CD
+            # mr_request.commit_sha stays as is from CI/CD
+            
             return mr_request
+        else:
+            # If API call fails, return original object unchanged
+            return mr_request
+            
+    except Exception as e:
+        print(f"Error enriching MR data: {e}")
+        return mr_request
             
     except Exception as e:
         print(f"Warning: Could not enrich MR data: {e}")
