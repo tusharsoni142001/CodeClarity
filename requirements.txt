@@ -5,3 +5,4 @@ langchain-groq
 google-cloud-storage
 fastapi
 pydantic[email]
+uvicorn
