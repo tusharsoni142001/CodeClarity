@@ -1,0 +1,6 @@
+requests
+python-dotenv
+langchain
+langchain-groq
+google-cloud-storage
+fastapi
