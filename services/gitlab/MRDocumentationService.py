@@ -34,7 +34,13 @@ async def process_merge_request_from_cicd(payload_data: dict):
         result = await create_mr_documentation(complete_mr_data)
         if result:
             upload_mr_documentation(complete_mr_data, result['MR Documentation'])
-        return result
+        return {
+            "message": "MR Documentation generated successfully",
+            "total_commits": result.total_commits,
+            # "MR Documentation (truncated to 500 characters)": mr_documentation[:500] + "..." if len(mr_documentation) > 500 else mr_documentation,
+            # "MR Documentation": mr_documentation,
+            "commits_processed": result.commits_processed,
+        }
         
     except Exception as e:
         raise Exception(f"Failed to process MR: {str(e)}")
@@ -129,7 +135,7 @@ async def create_mr_documentation(mr_data):
             "message": "MR Documentation generated successfully",
             "total_commits": commit_data.total_commits,
             # "MR Documentation (truncated to 500 characters)": mr_documentation[:500] + "..." if len(mr_documentation) > 500 else mr_documentation,
-            # "MR Documentation": mr_documentation,
+            "MR Documentation": mr_documentation,
             "commits_processed": len(commits_with_diffs)
         }
         
