@@ -129,7 +129,7 @@ async def create_mr_documentation(mr_data):
             "message": "MR Documentation generated successfully",
             "total_commits": commit_data.total_commits,
             # "MR Documentation (truncated to 500 characters)": mr_documentation[:500] + "..." if len(mr_documentation) > 500 else mr_documentation,
-            # "MR Documentation": mr_documentation,
+            "MR Documentation": mr_documentation,
             "commits_processed": len(commits_with_diffs)
         }
         
