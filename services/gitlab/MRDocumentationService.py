@@ -36,10 +36,10 @@ async def process_merge_request_from_cicd(payload_data: dict):
             upload_mr_documentation(complete_mr_data, result['MR Documentation'])
         return {
             "message": "MR Documentation generated successfully",
-            "total_commits": result.total_commits,
+            "total_commits": result['total_commits'],
             # "MR Documentation (truncated to 500 characters)": mr_documentation[:500] + "..." if len(mr_documentation) > 500 else mr_documentation,
             # "MR Documentation": mr_documentation,
-            "commits_processed": result.commits_processed,
+            "commits_processed": result['commits_processed'],
         }
         
     except Exception as e:

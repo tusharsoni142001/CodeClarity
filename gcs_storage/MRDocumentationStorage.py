@@ -1,5 +1,4 @@
 from google.cloud import storage
-import os
 from dotenv import load_dotenv
 from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
 import datetime
@@ -30,6 +29,7 @@ def upload_mr_documentation(request: MRDocumentationRequest, documentation: str)
     
     print(f"Documentation uploaded to: gs://{bucket_name}/{file_path}")
     return f"gs://{bucket_name}/{file_path}"
+
 def find_project_bucket(bucket_name: str):
     client = storage.Client()
     try:

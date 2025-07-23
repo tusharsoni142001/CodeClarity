@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from controllers.GitlabController import gitlab_router
+import uvicorn
 
 # Create FastAPI application instance
 app = FastAPI(
