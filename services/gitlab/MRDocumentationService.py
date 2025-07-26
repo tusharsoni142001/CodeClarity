@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import ValidationError
 import requests
 from dotenv import load_dotenv
-from llm_analysis.gitlab.MRDocumentationAnalysis import generate_documentation_with_llm
+from llm_analysis.gitlab.DocumentationAnalysis import generate_documentation_with_llm
 from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
 from models.gitlab.CommitModels import CommitResponse
 from gcs_storage.MRDocumentationStorage import upload_mr_documentation
@@ -33,14 +33,8 @@ async def process_merge_request_from_cicd(payload_data: dict):
         # Process documentation
         result = await create_mr_documentation(complete_mr_data)
         if result:
-            upload_mr_documentation(complete_mr_data, result['MR Documentation'])
-        return {
-            "message": "MR Documentation generated successfully",
-            "total_commits": result['total_commits'],
-            # "MR Documentation (truncated to 500 characters)": mr_documentation[:500] + "..." if len(mr_documentation) > 500 else mr_documentation,
-            # "MR Documentation": mr_documentation,
-            "commits_processed": result['commits_processed'],
-        }
+            await upload_mr_documentation(complete_mr_data, result['mr_documentation'])
+        return result
         
     except Exception as e:
         raise Exception(f"Failed to process MR: {str(e)}")
@@ -130,14 +124,24 @@ async def create_mr_documentation(mr_data):
         
         # Step 4: Send to LLM for documentation generation (placeholder for now)
         mr_documentation = await generate_documentation_with_llm(llm_formatted_data,mr_data)
-        
+
         return {
-            "message": "MR Documentation generated successfully",
-            "total_commits": commit_data.total_commits,
-            # "MR Documentation (truncated to 500 characters)": mr_documentation[:500] + "..." if len(mr_documentation) > 500 else mr_documentation,
-            "MR Documentation": mr_documentation,
-            "commits_processed": len(commits_with_diffs)
+            "status": "success",
+            "mr_shar": mr_data.commit_sha,
+            "mr_title": mr_data.title,
+            "mr_documentation": mr_documentation["mr_documentation"],
+            "documentation_summary": {
+                "mr_count": len(commits_with_diffs)
+            },
+            "llm_info": {
+                 "input_tokens": mr_documentation.get("token_usage", {}).get("input_tokens", 0),
+                "output_tokens": mr_documentation.get("token_usage", {}).get("output_tokens", 0),
+                "total_tokens": mr_documentation.get("token_usage", {}).get("total_tokens", 0),
+                "model_used": mr_documentation.get("model_used", "gpt-4-1106"),
+                "generation_successful": mr_documentation.get("generation_successful", False)
+            }
         }
+
         
     except Exception as e:
         # Log the error details

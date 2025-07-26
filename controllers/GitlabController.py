@@ -27,6 +27,6 @@ async def generate_release_note(request: dict):
         endtime = datetime.now()
         duration = (endtime - start_time).total_seconds()
         print(f"Release Note generation took {duration} seconds")
-        return {"result": result}
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
