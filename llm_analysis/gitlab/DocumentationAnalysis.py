@@ -112,78 +112,78 @@ async def generate_documentation_with_llm(formatted_llm_data: str, request):
     
     
 
+from langchain_groq import ChatGroq
+from langchain_core.prompts import PromptTemplate
+from httpx import Client
+
+# Assume GROQ_API_KEY is configured in your environment
+# from your_config import GROQ_API_KEY 
+
 async def setup_llm_mr_gitlab():
-    """Configure LLM for GitLab MR analysis"""
+    """Configure LLM for GitLab MR analysis for a non-technical audience."""
 
     http_client = Client(
-        verify=False,  # Disable SSL verification
-        timeout=60.0   # Optional timeout setting
+        verify=False,
+        timeout=60.0
     )
     llm = ChatGroq(
         groq_api_key=GROQ_API_KEY,
         model_name="meta-llama/llama-4-maverick-17b-128e-instruct",
-        temperature=0.2,
-        http_client=http_client  # Use the custom client with verification disabled
+        # A low temperature is crucial for reducing hallucinations and creativity.
+        # 0.3 is a good choice.
+        temperature=0.3,
+        http_client=http_client
     )
 
     mr_prompt_text = """
-You are a Technical Documentation Specialist who creates comprehensive merge request documentation from code changes.
+        You are an expert Technical Writer and Product Communicator. Your task is to translate technical merge request details into a clear, concise, and impact-oriented summary for a non-technical audience (managers, product owners, stakeholders).
 
-## Merge Request Information:
-**Title:** {mr_title}
-**Author:** {mr_author}
-**Merged By:** {merged_by}
-**Labels:** {labels}
-**Description:** {mr_description}
+        ## Merge Request Context:
+        **Title:** {mr_title}
+        **Author:** {mr_author}
+        **Merged By:** {merged_by}
+        **Labels:** {labels}
+        **Description:** {mr_description}
 
-Analyze the following merge request changes and generate documentation that:
+        ## Technical Changes Analysis:
+        {formatted_commit_data}
 
-1. STRUCTURE:
-   - Start with an executive summary of the merge request based on title and description
-   - Use clear main heading summarizing the overall changes
-   - Use appropriate subheadings for different components changed (API endpoints, functions, database, etc.)
-   - Format code snippets, endpoints, and parameters consistently with proper code formatting
+        ---
 
-2. KEY CONTENT TO IDENTIFY AND DOCUMENT (when present):
-   - New/Modified API Endpoints: Include the full path, method (GET/POST/etc.), and detailed description
-   - New Functions/Methods: Include function name, purpose, parameters, and usage examples
-   - Configuration Changes: Document new settings, default values, and their effects
-   - Database Changes: Note schema updates, migrations, or data structure changes
-   - UI Components: Document new UI elements or significant visual changes
-   - Bug Fixes: Clearly explain what was broken and how it was fixed
-   - Performance Improvements: Document optimization changes and expected impact
+        ## Your Task: Generate a Business-Focused Summary
 
-3. FOR EACH KEY ELEMENT, INCLUDE:
-   - What it does and why it was added/changed
-   - Required parameters/payload with types (if applicable)
-   - Usage examples or integration patterns
-   - Return values or response format (for APIs)
-   - Breaking changes or migration notes (if any)
+        **Crucial Instruction:** Your entire summary must be based **exclusively** on the information provided in the "Merge Request Context" and "Technical Changes Analysis" above. Do not invent, infer, or assume any information that is not explicitly stated in the provided text.
 
-4. WRITING GUIDELINES:
-   - Create comprehensive documentation suitable for technical teams
-   - Focus on practical details developers and stakeholders need to know
-   - Include context from MR title, description, and labels
-   - Use technical but clear language
-   - Highlight any breaking changes or important considerations
-   - Reference the MR author's intent from the description when relevant
+        Based *only* on the information provided, create a summary that follows these guidelines:
 
-5. INTEGRATION CONTEXT:
-   - Consider how these changes fit into the broader system
-   - Note any dependencies or related components affected
-   - Include deployment or configuration considerations if evident
+        ### 1. Executive Summary (The "What & Why")
+        Start with a single paragraph that immediately answers:
+        - What problem was solved or what new capability was added, according to the source material?
+        - Why was this change important, as stated in the MR title, description, or labels?
 
-## Technical Changes Analysis:
-{formatted_commit_data}
+        ### 2. Key Changes & User Impact
+        Describe the most important changes from a user's point of view, using a bulleted list. Ground every point in the provided context.
+        - **For New Features:** Describe what users can now do. (e.g., "Users can now export their dashboard data to a CSV file.")
+        - **For Bug Fixes:** Explain the user-facing problem that was resolved. (e.g., "Fixed an issue where the application would crash when uploading large files.")
+        - **For Enhancements:** Describe the improvement. (e.g., "The main dashboard now loads faster.")
 
-Generate comprehensive merge request documentation that serves as both a technical reference and a change summary. The documentation should help team members understand:
-- What was changed and why
-- How to use new features or adapt to changes  
-- Any important considerations for deployment or integration
-- The overall impact and value of this merge request
+        ### 3. Business Value & Context
+        In 1-2 sentences, explain the strategic importance as it can be directly inferred from the context. Use the MR labels (`feature`, `bug`, etc.) to guide your explanation.
 
-Use the MR labels to understand the context (e.g., bug, feature, enhancement) and tailor the documentation accordingly.
-"""
+        ### 4. Writing Style & Tone
+        - **Audience:** Write for managers, not engineers.
+        - **Language:** Use clear, simple, and direct language.
+        - **Focus:** Emphasize benefits over technical implementation.
+
+        ### 5. What to AVOID
+        - **DO NOT** include code snippets, file paths, or function names.
+        - **DO NOT** explain technical implementation details.
+        - **DO NOT speculate or invent user benefits or business impacts that are not supported by the provided context.** If the context doesn't explain the 'why', then simply describe the 'what'.
+        - **DO NOT** create a long, exhaustive list of every minor change.
+
+        ### 6. Final Verification (Self-Correction Step)
+        Before providing the final output, review your generated summary one last time. For each statement you have written, ask yourself: "Can I point to a specific sentence or piece of data in the provided context that supports this claim?" If the answer is no, rephrase or remove the statement.
+        """
 
     prompt = PromptTemplate(
         input_variables=["mr_title", "mr_author", "merged_by", "labels", "mr_description", "formatted_commit_data"],
@@ -193,8 +193,15 @@ Use the MR labels to understand the context (e.g., bug, feature, enhancement) an
     return prompt | llm
 
 # prompt for release note
+from langchain_groq import ChatGroq
+from langchain_core.prompts import PromptTemplate
+from httpx import Client
+
+# Assume GROQ_API_KEY is configured in your environment
+# from your_config import GROQ_API_KEY 
+
 async def setup_llm_release_gitlab():
-    """Configure LLM for GitLab Release Note analysis"""
+    """Configure LLM to synthesize MR summaries into a final release note."""
 
     http_client = Client(
         verify=False,  # Disable SSL verification
@@ -203,74 +210,66 @@ async def setup_llm_release_gitlab():
     llm = ChatGroq(
         groq_api_key=GROQ_API_KEY,
         model_name="meta-llama/llama-4-maverick-17b-128e-instruct",
+        # Low temperature is essential for a factual, summary-based task.
         temperature=0.2,
-        http_client=http_client  # Use the custom client with verification disabled
+        http_client=http_client
     )
 
-    mr_prompt_text = """
-You are an expert technical writer who creates comprehensive release notes from merge request documentation. 
+    release_note_prompt_text = """
+You are an expert Release Note Crafter specializing in clear, high-level communication for executives, product managers, and stakeholders.
 
-Your task is to analyze the provided MR documentations and create a professional release note that includes:
+Your task is to synthesize a collection of individual merge request (MR) summaries into a single, cohesive, and professional release note.
 
 ## Release Information:
 **Release Tag:** {release_tag}
 **Release Name:** {release_name}
 **Project Name:** {project_name}
-**Total MRs:** {total_mrs}
+**Total MRs Included:** {total_mrs}
 
-
-Analyze the following merge request changes and generate documentation that:
-
-1. STRUCTURE:
-   - Start with an executive summary of the merge request based on title and description
-   - Use clear main heading summarizing the overall changes
-   - Use appropriate subheadings for different components changed (API endpoints, functions, database, etc.)
-   - Format code snippets, endpoints, and parameters consistently with proper code formatting
-
-2. KEY CONTENT TO IDENTIFY AND DOCUMENT (when present):
-   - New/Modified API Endpoints: Include the full path, method (GET/POST/etc.), and detailed description
-   - New Functions/Methods: Include function name, purpose, parameters, and usage examples
-   - Configuration Changes: Document new settings, default values, and their effects
-   - Database Changes: Note schema updates, migrations, or data structure changes
-   - UI Components: Document new UI elements or significant visual changes
-   - Bug Fixes: Clearly explain what was broken and how it was fixed
-   - Performance Improvements: Document optimization changes and expected impact
-
-3. FOR EACH KEY ELEMENT, INCLUDE:
-   - What it does and why it was added/changed
-   - Required parameters/payload with types (if applicable)
-   - Usage examples or integration patterns
-   - Return values or response format (for APIs)
-   - Breaking changes or migration notes (if any)
-
-4. WRITING GUIDELINES:
-   - Create comprehensive documentation suitable for technical teams
-   - Focus on practical details developers and stakeholders need to know
-   - Include context from MR title, description, and labels
-   - Use technical but clear language
-   - Highlight any breaking changes or important considerations
-   - Reference the MR author's intent from the description when relevant
-
-5. INTEGRATION CONTEXT:
-   - Consider how these changes fit into the broader system
-   - Note any dependencies or related components affected
-   - Include deployment or configuration considerations if evident
-
-## Technical Changes Analysis:
+## Source Material: Merge Request Summaries
+Here are the business-focused summaries for each merge request in this release. Each summary describes the 'what' and 'why' of a change.
+---
 {formatted_llm_data}
+---
 
-Generate comprehensive merge request documentation that serves as both a technical reference and a change summary. The documentation should help team members understand:
-- What was changed and why
-- How to use new features or adapt to changes  
-- Any important considerations for deployment or integration
-- The overall impact and value of this merge request
+## Your Task: Generate the Final Release Note
 
-Use the MR labels to understand the context (e.g., bug, feature, enhancement) and tailor the documentation accordingly.
+**Crucial Instruction:** Your entire release note must be built **exclusively** from the "Source Material" provided above. Do not add information, speculate on impacts, or invent details that are not present in the individual MR summaries.
+
+Synthesize the source material into a well-structured markdown document following these guidelines:
+
+### 1. Release Header
+Start with a clear, concise title using the release name and tag.
+
+### 2. Overall Summary (Highlights)
+Write a brief, impactful paragraph summarizing the key theme of this release. Answer questions like: What is the most significant new feature? Was this release focused on stability or innovation? Pull the most important points from the source material to feature here.
+
+### 3. Categorized Changes
+Read through all the MR summaries and group them into the following categories. For each item, write a clear, benefit-oriented bullet point based on its summary.
+
+**New Features**
+*(List the major new capabilities and features introduced in this release. If there are no new features, omit this section.)*
+
+**Enhancements & Improvements**
+*(Detail significant improvements to existing features, performance, or user experience. If none, omit this section.)*
+
+**Bug Fixes**
+*(Summarize important bug fixes, focusing on the problem that was solved for the user. If none, omit this section.)*
+
+
+### 4. What to AVOID
+- **DO NOT** use technical jargon, function names, or implementation details.
+- **DO NOT** just copy-paste the summaries. Synthesize and rephrase them for a cohesive flow.
+- **DO NOT** invent a category if no MRs fit into it.
+- **Your ONLY source of truth is the `{formatted_llm_data}`.** Do not add anything not supported by it.
+
+### 5. Final Verification (Self-Correction Step)
+Before providing the final output, review your release note. For each bullet point, ensure it directly corresponds to one of the provided MR summaries in the source material. If a statement cannot be traced back, remove it.
 """
 
     prompt = PromptTemplate(
         input_variables=["release_tag", "release_name", "project_name", "total_mrs", "formatted_llm_data"],
-        template=mr_prompt_text
+        template=release_note_prompt_text
     )
 
     return prompt | llm
