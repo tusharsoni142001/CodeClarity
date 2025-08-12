@@ -1,16 +1,22 @@
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
+from langchain_core.exceptions import LangChainException
+from groq import APIError as GroqAPIError
 from dotenv import load_dotenv
 from httpx import Client
 import os
 from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
 from models.gitlab.ReleaseNoteRequest import ReleaseNoteRequest
+import logging
+from exception.exceptions import *
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-async def generate_documentation_with_llm(formatted_llm_data: str, request):
+def generate_documentation_with_llm(formatted_llm_data: str, request):
     """
     Generate documentation using LLM based on formatted commit data.
     This function prepares the prompt and calls the LLM to generate documentation.
@@ -20,7 +26,7 @@ async def generate_documentation_with_llm(formatted_llm_data: str, request):
         if isinstance(request, MRDocumentationRequest):
 
             # Setup LLM with MR context
-            llm_mr = await setup_llm_mr_gitlab()
+            llm_mr = setup_llm_mr_gitlab()
             # Prepare the prompt with necessary data
             response = llm_mr.invoke(
                 {
@@ -32,6 +38,8 @@ async def generate_documentation_with_llm(formatted_llm_data: str, request):
                     "formatted_commit_data":formatted_llm_data
                 }
             )
+
+            
         
             if hasattr(response, "content"):
                 mr_documentation = response.content
@@ -39,6 +47,8 @@ async def generate_documentation_with_llm(formatted_llm_data: str, request):
                 mr_documentation = response.text
             else:
                 mr_documentation = str(response)
+            
+            logger.info("MR Documentation generated successfully")
             
             # Extract detailed token usage
             token_info = {
@@ -65,7 +75,7 @@ async def generate_documentation_with_llm(formatted_llm_data: str, request):
 
         elif isinstance(request, ReleaseNoteRequest):
             # Setup LLM with Release Note context
-            llm_release = await setup_llm_release_gitlab()
+            llm_release =  setup_llm_release_gitlab()
             # Prepare the prompt with necessary data
             response = llm_release.invoke(
                 {
@@ -107,20 +117,15 @@ async def generate_documentation_with_llm(formatted_llm_data: str, request):
                 "generation_successful": True
             }
 
-    except Exception as e:
-        raise ValueError(f"Failed to generate documentation: {str(e)}")
-    
-    
+    except GroqAPIError as e:
+        raise DocumentationGenerationError(f"Groq API error: Failed to generate documentation: {str(e)}")
+    except LangChainException as e:
+        raise DocumentationGenerationError(f"LangChain error: Failed to generate documentation: {str(e)}")
 
-from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
-from httpx import Client
 
-# Assume GROQ_API_KEY is configured in your environment
-# from your_config import GROQ_API_KEY 
 
-async def setup_llm_mr_gitlab():
-    """Configure LLM for GitLab MR analysis for a non-technical audience."""
+def setup_llm_mr_gitlab():
+    """Configure LLM for GitLab MR analysis"""
 
     http_client = Client(
         verify=False,
@@ -129,10 +134,8 @@ async def setup_llm_mr_gitlab():
     llm = ChatGroq(
         groq_api_key=GROQ_API_KEY,
         model_name="meta-llama/llama-4-maverick-17b-128e-instruct",
-        # A low temperature is crucial for reducing hallucinations and creativity.
-        # 0.3 is a good choice.
         temperature=0.3,
-        http_client=http_client
+        http_client=http_client  # Use the custom client with verification disabled
     )
 
     mr_prompt_text = """
@@ -193,15 +196,8 @@ async def setup_llm_mr_gitlab():
     return prompt | llm
 
 # prompt for release note
-from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
-from httpx import Client
-
-# Assume GROQ_API_KEY is configured in your environment
-# from your_config import GROQ_API_KEY 
-
-async def setup_llm_release_gitlab():
-    """Configure LLM to synthesize MR summaries into a final release note."""
+def setup_llm_release_gitlab():
+    """Configure LLM for GitLab Release Note analysis"""
 
     http_client = Client(
         verify=False,  # Disable SSL verification

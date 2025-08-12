@@ -3,3 +3,6 @@ __pycache__/
 myenv/
 gcp_key/
 .vscode/
+Frontend/gcp_key/
+Frontend/__pycache__/
+Frontend/myenv/

@@ -1,0 +1,491 @@
+/* ============================
+   STREAMLIT HEADER HIDING
+   ============================ */
+
+header[data-testid="stHeader"] {
+    height: 0px !important;
+    visibility: hidden !important;
+}
+
+.css-18ni7ap, .css-1dp5vir, .css-1lcbmhc {
+    visibility: hidden !important;
+    height: 0px !important;
+}
+
+#MainMenu {
+    visibility: hidden !important;
+}
+
+footer {
+    visibility: hidden !important;
+}
+
+/* ============================
+   BASE STYLES
+   ============================ */
+
+.css-18e3th9 {
+    padding-top: 0 !important;
+}
+
+.css-1d391kg {
+    padding-top: 0 !important;
+}
+
+.block-container {
+    padding-top: 1rem !important;
+    max-width: 100% !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0 !important;
+    margin-bottom: 0.5rem !important;
+    padding-top: 0 !important;
+}
+
+.sidebar .sidebar-content {
+    padding-top: 0 !important;
+}
+
+/* ============================
+   SIDEBAR WITH WORLDLINE LOGO - CLEAN
+   ============================ */
+
+.sidebar-logo-section {
+    text-align: center;
+    margin: -2rem -1rem 15px -1rem;
+    padding: 0;
+}
+
+.sidebar-code-clarity {
+    color: #FFFFFF !important;
+    font-size: 1.6rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+/* ============================
+   SIDEBAR LABELS & ELEMENTS - BIGGER TEXT
+   ============================ */
+
+.css-1d391kg label {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    color: #E2E8F0 !important;
+    margin-bottom: 8px !important;
+}
+
+.stRadio > div {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    /* Ensure consistent width */
+    /* width: 100% !important; */
+    width: 297px !important; /* Set a fixed width */
+    max-width: 100% !important; /* Ensure it doesn't overflow */
+}
+
+.stRadio > div > label {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 4px 0 !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    color: #E2E8F0 !important;
+}
+
+.stRadio > div > label:hover {
+    background-color: rgba(72, 187, 120, 0.1) !important;
+}
+
+/* ============================
+   SIMPLE DROPDOWN STYLING
+   ============================ */
+
+.stSelectbox > div > div {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+}
+
+.stRadio > div:after, .stRadio > div:before {
+    display: none !important;
+}
+
+.stRadio {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* ============================
+   MAIN HEADER WITH NO GREEN BACKGROUND
+   ============================ */
+
+.main-header-custom {
+    display: flex !important;
+    align-items: center !important;
+    gap: 20px !important;
+    padding: 20px 32px !important;
+    margin: -1rem -1rem 2rem -1rem !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.main-logo-custom {
+    height: 100px !important;
+    width: auto !important;
+    max-width: 200px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+}
+
+.main-portal-heading-custom {
+    color: #CBD5E0 !important;
+    font-size: 1.5rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    letter-spacing: 0.3px !important;
+    opacity: 0.9 !important;
+    line-height: 1.2 !important;
+    padding: 0 !important;
+}
+
+/* ============================
+   DOCUMENTATION CONTAINER
+   ============================ */
+
+.documentation-container {
+    background: transparent; /* Make container background transparent */
+    border-radius: 0;
+    border: none;
+    overflow: visible;
+    box-shadow: none;
+}
+
+/* --- MINIMAL, ROBUST HEADER --- */
+.doc-header {
+    background: transparent; /* No header background */
+    padding: 10px 0; /* Add some vertical padding */
+    border: none;
+}
+
+.doc-header .st-emotion-cache-17k2g4v {
+    align-items: center; /* Vertically align all items in the columns */
+}
+
+.doc-header h1 {
+    color: #F7FAFC !important;
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.export-label {
+    color: #A0AEC0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 5px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.doc-header .stDownloadButton button {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #E2E8F0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    height: 38px !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+}
+
+.doc-header .stDownloadButton button:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.version-badge {
+    background-color: #38A169; /* Slightly darker green */
+    color: white !important;
+    padding: 0 16px;
+    border-radius: 19px; /* Pill shape */
+    font-size: 0.9rem !important;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    box-sizing: border-box;
+}
+
+/* --- STYLED SEPARATOR LINE --- */
+.header-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    /* margin: 1rem 0 2rem 0; Add spacing above and below the line */
+}
+
+/* ============================
+   DOCUMENTATION CONTENT
+   ============================ */
+
+/* Content now sits directly on the page */
+.doc-content {
+    padding: 0;
+    line-height: 1.7;
+}
+
+.doc-content h1, .doc-content h2, .doc-content h3, .doc-content h4, .doc-content h5, .doc-content h6 {
+    color: #F7FAFC !important;
+}
+
+.doc-content h2 {
+    font-size: 1.5rem !important;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #4A5568;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.doc-content h3 {
+    font-size: 1.2rem !important;
+    color: #CBD5E0 !important;
+    margin-top: 1.5rem;
+}
+
+.doc-content p {
+    color: #E2E8F0 !important;
+    font-size: 1rem;
+}
+/* ... etc. - You can keep your existing detailed content styles */
+.doc-content ul, .doc-content ol {
+    color: #CBD5E0 !important;
+    margin: 24px 0 !important;
+    padding-left: 28px !important;
+}
+
+.doc-content li {
+    margin: 16px 0 !important;
+    color: #CBD5E0 !important;
+    line-height: 1.6;
+    position: relative;
+}
+
+.doc-content ul li::before {
+    content: '▸';
+    color: #48BB78;
+    font-weight: bold;
+    position: absolute;
+    left: -24px;
+}
+
+.doc-content code {
+    background: rgba(72, 187, 120, 0.18) !important;
+    color: #68D391 !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    font-size: 0.9rem !important;
+    border: 1px solid rgba(72, 187, 120, 0.3) !important;
+    font-weight: 500 !important;
+}
+
+.doc-content pre {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    margin: 28px 0 !important;
+    overflow-x: auto !important;
+    border-left: 4px solid #48BB78 !important;
+}
+
+.doc-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.doc-content th {
+    background: #2d3748;
+    color: #F7FAFC;
+    padding: 18px 24px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.doc-content td {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #E2E8F0;
+    font-size: 0.95rem;
+}
+
+.doc-content tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.doc-content a {
+    color: #68D391 !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+}
+
+.doc-content a:hover {
+    color: #48BB78 !important;
+    text-decoration: underline !important;
+}
+
+.doc-content strong {
+    color: #F7FAFC !important;
+    font-weight: 600 !important;
+}
+
+.doc-content em {
+    color: #68D391 !important;
+    font-style: italic;
+}
+
+.no-content-message {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    color: #CBD5E0 !important;
+    margin: 48px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.debug-info {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    margin: 24px 0 !important;
+    color: #CBD5E0 !important;
+    font-size: 0.9rem;
+}
+
+/* ============================
+   RESPONSIVE DESIGN
+   ============================ */
+
+@media (max-width: 768px) {
+    .release-overview {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .main-worldline-logo {
+        height: 50px !important;
+    }
+    
+    .main-product-name {
+        font-size: 1.5rem !important;
+    }
+    
+    .main-product-subtitle {
+        font-size: 0.9rem !important;
+    }
+    
+    .sidebar-code-clarity {
+        font-size: 1.4rem !important;
+    }
+    
+    .release-summary-card h3 {
+        font-size: 1.5rem !important;
+    }
+    
+    .release-summary-card p {
+        font-size: 1rem !important;
+    }
+    
+    .metrics-header {
+        font-size: 1.3rem !important;
+    }
+    
+    .css-1d391kg label {
+        font-size: 1rem !important;
+    }
+    
+    .stRadio > div > label {
+        font-size: 0.9rem !important;
+    }
+}
+
+/* --- STYLED SEPARATOR LINE --- */
+.header-divider {
+    border: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin: 0 !important; /* Remove all default margins */
+    padding: 0 !important; /* Remove any padding */
+    height: 1px !important; /* Ensure consistent height */
+    background: transparent !important;
+}
+
+/* Also target hr elements directly within the documentation wrapper */
+.documentation-wrapper hr {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ============================
+   RELEASE OVERVIEW CARD - ORIGINAL DARK GREEN
+   ============================ */
+
+.release-overview-card {
+    background: rgba(72, 187, 120, 0.1) !important; /* Back to your original darker green */
+    border: 1px solid rgba(72, 187, 120, 0.3) !important;
+    border-radius: 12px !important;
+    padding: 32px !important; /* Original spacing */
+    margin: 20px 0 30px 0 !important;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15) !important;
+}
+
+.release-overview-card h2 {
+    color: #68D391 !important;
+    font-size: 1.8rem !important; /* Original larger font */
+    font-weight: 600 !important;
+    margin: 0 0 24px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.overview-summary {
+    color: #E2E8F0 !important;
+    font-size: 1.15rem !important; /* Original font size */
+    line-height: 1.7 !important;
+    margin: 0 0 24px 0 !important;
+    font-weight: 400 !important;
+}
+
+.overview-metadata {
+    color: #A0AEC0 !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    opacity: 0.8;
+    margin-top: 8px !important;
+}

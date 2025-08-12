@@ -1,168 +1,117 @@
-import asyncio
 from typing import Dict, List, Set
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
 from dotenv import load_dotenv
+from exception.exceptions import BucketNotFound, GCSOperationError, MRDocumentationNotFoundError
 from models.gitlab.ReleaseNoteRequest import ReleaseNoteRequest
 from gcs_storage.Utility import (
-    find_project_bucket,
     get_documents_sha,
     extract_sha_from_filename,
 )
-from concurrent.futures import ThreadPoolExecutor
 import datetime
+import logging
+from google.api_core import exceptions as gcs_exceptions
+from exception.exceptions import GCSBucketError, GCSUploadError, DuplicateDocumentationError
 
+logger = logging.getLogger(__name__)
 load_dotenv()
 
-# Thread pool for blocking operations
-executor = ThreadPoolExecutor(max_workers=10)
 
 
-async def get_MR_documentation_sha_from_bucket(request: ReleaseNoteRequest):
-    """Get all MR SHAs that have documentation in the bucket"""
+def get_MR_documentation_sha_from_bucket(request: ReleaseNoteRequest):
+    """Get all MR SHAs that have documentation in the bucket."""
     bucket_name = f"{request.project_id}-{request.project_name}"
     storage_client = storage.Client()
 
-    if await find_project_bucket(bucket_name):
+    try:
         bucket = storage_client.bucket(bucket_name)
-    else:
-        raise Exception(f"Bucket {bucket_name} does not exist.")
+        if not bucket.exists():
+            raise BucketNotFound(f"Bucket '{bucket_name}' not found.")
 
-    mr_sha = await get_documents_sha(bucket)
+        mr_sha = get_documents_sha(bucket)
+        if not mr_sha:
+            raise MRDocumentationNotFoundError(f"No MR documentation found in bucket {bucket_name}")
 
-    if not mr_sha:
-        raise Exception(f"No MR documentation found in bucket {bucket_name}")
+        return mr_sha
+    except gcs_exceptions.Forbidden as e:
+        raise GCSBucketError(f"Permission denied for GCS bucket '{bucket_name}'.") from e
+    except gcs_exceptions.GoogleAPICallError as e:
+        raise GCSOperationError(f"A GCS API error occurred: {e}") from e
 
-    return mr_sha
 
+def get_MR_documentation(release_note_request: ReleaseNoteRequest, mr_in_release: set):
+    """Get documentation for MRs that are both in release and have documentation."""
+    try:
+        mr_in_gcs = get_MR_documentation_sha_from_bucket(release_note_request)
+        common_sha = mr_in_release.intersection(mr_in_gcs)
 
-async def get_MR_documentation(release_note_request: ReleaseNoteRequest, mr_in_release: set):
-    """Get documentation for MRs that are both in release and have documentation"""
-    bucket_name = (
-        f"{release_note_request.project_id}-{release_note_request.project_name}"
-    )
-    storage_client = storage.Client()
+        if not common_sha:
+            raise MRDocumentationNotFoundError(f"No matching documentation found for release '{release_note_request.release_tag}'")
 
-    # Get all MRs that have documentation
-    mr_in_gcs = await get_MR_documentation_sha_from_bucket(release_note_request)
-
-    if await find_project_bucket(bucket_name):
+        storage_client = storage.Client()
+        bucket_name = f"{release_note_request.project_id}-{release_note_request.project_name}"
         bucket = storage_client.bucket(bucket_name)
-    else:
-        raise Exception(f"Bucket {bucket_name} does not exist.")
 
-    # Find common SHAs (in both release and GCS)
-    common_sha = mr_in_release.intersection(mr_in_gcs)
+        return get_MR_documentation_from_bucket(bucket, common_sha)
+    except MRDocumentationNotFoundError as e:
+        raise
 
-    if not common_sha:
-        raise Exception(
-            f"No documentation found for release {release_note_request.release_tag}"
-        )
-
-    # Get the actual documentation content
-    mr_documentation = await get_MR_documentation_from_bucket(bucket, common_sha)
-    return mr_documentation
-
-
-async def get_MR_documentation_from_bucket(bucket, common_sha: set):
-    """Get documentation content from bucket for specific SHAs"""
-    loop = asyncio.get_event_loop()
-
-    def get_documentation():
-        common_sha
-        documents = []
-
+def get_MR_documentation_from_bucket(bucket, common_sha: set):
+    """Get documentation content from bucket for specific SHAs."""
+    documents = []
+    try:
         blobs = bucket.list_blobs(prefix="current_release/")
         for blob in blobs:
             blob_sha = extract_sha_from_filename(blob.name)
-
             if blob_sha and blob_sha in common_sha:
-                print(f"Processing documentation for SHA: {blob_sha}")
                 content = blob.download_as_text()
-                documents.append(
-                    {
-                        "sha": blob_sha,
-                        "filename": blob.name.split("/")[-1],
-                        "content": content,
-                        "token_count": estimate_tokens(content),
-                    }
-                )
-
+                documents.append({
+                    "sha": blob_sha,
+                    "content": content,
+                    # ... other fields
+                })
         return format_for_llm(documents)
+    except gcs_exceptions.GoogleAPICallError as e:
+        raise GCSOperationError(f"Failed to download documentation from GCS: {e}") from e
 
-    return await loop.run_in_executor(executor, get_documentation)
 
 
-async def upload_release_note(request: ReleaseNoteRequest, release_note: str, mr_sha: list):
-    bucket_name = f"{request.project_id}-{request.project_name}"
+def upload_release_note(request: ReleaseNoteRequest, release_note: str, mr_sha: list):
+    """Uploads the final release note and moves related MR docs."""
     storage_client = storage.Client()
-    
+    bucket_name = f"{request.project_id}-{request.project_name}"
+    bucket = storage_client.bucket(bucket_name)
+
     try:
-        # Check if bucket exists
-        try:
-            bucket_exists = await find_project_bucket(bucket_name)
-            if not bucket_exists:
-                raise Exception(f"Bucket {bucket_name} does not exist.")
-            
-            bucket = storage_client.bucket(bucket_name)
-            
-        except Exception as e:
-            raise Exception(f"Bucket connection failed: {e}")
+        if not bucket.exists():
+            logger.info(f"Bucket {bucket_name} not found, creating it.")
+            # storage_client.create_bucket(bucket)
 
-        # Generate timestamp and file paths
-        try:
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            blob_name = f"{timestamp}_release-note_{request.release_tag}.md"
-            file_path = f"releases/{request.release_tag}/{blob_name}"
-            
-        except Exception as e:
-            raise Exception(f"File path generation failed: {e}")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        blob_name = f"{timestamp}_release-note_{request.release_tag}.md"
+        file_path = f"releases/{request.release_tag}/{blob_name}"
+        blob = bucket.blob(file_path)
+        blob.upload_from_string(release_note, content_type='text/markdown')
 
-        # Upload release note
-        try:
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(executor, lambda: storage_client.bucket(bucket_name).blob(file_path).upload_from_string(
-                    release_note, content_type='text/markdown'
-                ))
-            
-        except Exception as e:
-            raise Exception(f"Release note upload failed: {e}")
+        logger.info(f"Release note uploaded to: gs://{bucket_name}/{file_path}")
 
-        # Move MR documentation to releases folder
-        try:
-            # List blobs in current_release folder
-            blobs = bucket.list_blobs(prefix="current_release/")
-            
-            # Convert blob iterator to list of blob names
-            blob_names = [blob.name for blob in blobs if not blob.name.endswith('/')]
-            
-            if not blob_names:
-                moved_folders = {}
-            else:
-                destination_folder = f"releases/{request.release_tag}/mr_docs/"
-                
-                # Move blobs to destination folder
-            moved_folders = move_mr_documentation(
-                    bucket_name, 
-                    blob_names, 
-                    destination_folder,
-                    mr_sha
-                )
-                
-        except Exception as e:
-            # Don't raise here - release note upload was successful
-            raise Exception(f"Failed to move MR documentation: {e}")
-            moved_folders = {}
+    except gcs_exceptions.Forbidden as e:
+        raise GCSBucketError(f"Permission denied for GCS bucket '{bucket_name}'.") from e
+    except gcs_exceptions.GoogleAPICallError as e:
+        raise GCSUploadError(f"GCS error during release note upload: {e}") from e
 
-        print(f"Documentation uploaded to: gs://{bucket_name}/{file_path}")
-        if moved_folders:
-            print(f"Moved {len(moved_folders)} MR documents to releases folder")
-        
-        return f"gs://{bucket_name}/{file_path}"
-        
+    # This part is non-critical, so its failure should only be logged as a warning.
+    try:
+        blobs = bucket.list_blobs(prefix="current_release/")
+        blob_names = [b.name for b in blobs if not b.name.endswith('/')]
+        if blob_names:
+            destination_folder = f"releases/{request.release_tag}/mr_docs/"
+            move_mr_documentation(bucket_name, blob_names, destination_folder, mr_sha)
     except Exception as e:
-        raise Exception(f"Failed to upload release note for {request.release_tag}: {e}")
+        logger.warning(f"Non-critical error: Failed to move MR documentation. Reason: {e}")
 
+    return f"gs://{bucket_name}/{file_path}"
+        
 
 
 def format_for_llm(documents):
@@ -255,9 +204,9 @@ def move_mr_documentation(bucket_name: str, blob_names: List[str], destination_f
 
         except Exception as e:
             failed_moves[source_blob_name] = str(e)
-            print(f"❌ Failed to move {source_blob_name}: {e}")
+            raise GCSOperationError(f"Failed to move blob {source_blob_name} to {destination_blob_name}: {e}") from e
 
     if failed_moves:
-        print(f"\nBatch move summary: {len(moved_blobs)} succeeded, {len(failed_moves)} failed.")
+        logger.info(f"\nBatch move summary: {len(moved_blobs)} succeeded, {len(failed_moves)} failed.")
 
     return moved_blobs
