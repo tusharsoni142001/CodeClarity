@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import requests
 from models.gitlab.ReleaseNoteRequest import ReleaseNoteRequest
 from gcs_storage.ReleaseNoteStorage import *
+from exception.exceptions import GitlabAPIError, MRDocumentationNotFoundError, MRNotFoundForReleaseError
 # from llm_analysis.gitlab.ReleasNoteAnalysis_openAI import generate_release_note_with_llm
 from llm_analysis.gitlab.DocumentationAnalysis import generate_documentation_with_llm
 
@@ -12,23 +13,22 @@ load_dotenv()
 
 GITLAB_TOKEN = os.getenv("GITLAB_TOKEN")
 
-async def process_release_note_from_cicd(request: dict):
+def process_release_note_from_cicd(request: dict):
 
-    try:
         # Convert request to ReleaseNoteRequest model
         release_note_request = ReleaseNoteRequest.model_validate(request)
 
 
         #Find Release details using GitLab API and returns a enriched ReleaseNoteRequest object
-        complete_release_note_request = await find_release_by_tag(release_note_request)
+        complete_release_note_request = find_release_by_tag(release_note_request)
 
         
 
         # Create release note
-        result = await create_release_note(complete_release_note_request)
+        result = create_release_note(complete_release_note_request)
         
         if result:
-            await upload_release_note(release_note_request, result['release_note_content'], result['mr_sha'])
+            upload_release_note(release_note_request, result['release_note_content'], result['mr_sha'])
         
         # return {
         #     "message": "Release Note generated successfully",
@@ -41,10 +41,9 @@ async def process_release_note_from_cicd(request: dict):
         # }
 
         return result
-    except Exception as e:
-        raise Exception(f"Failed to process Release Note: {str(e)}")
+
     
-async def find_release_by_tag(release_note_request: ReleaseNoteRequest) -> ReleaseNoteRequest:
+def find_release_by_tag(release_note_request: ReleaseNoteRequest) -> ReleaseNoteRequest:
     """
     Find a release by tag.
     This is a placeholder function and should be implemented to query the GitLab API.
@@ -54,6 +53,7 @@ async def find_release_by_tag(release_note_request: ReleaseNoteRequest) -> Relea
 
     try:
         response = requests.get(url,headers=headers)
+        response.raise_for_status()  # Raise an error for bad responses
         if response.status_code == 200:
             release_data = response.json()
 
@@ -70,45 +70,53 @@ async def find_release_by_tag(release_note_request: ReleaseNoteRequest) -> Relea
             return release_note_request
         else:
             return release_note_request
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise GitlabAPIError(f"Release not found for tag {release_note_request.release_tag} in project {release_note_request.project_id}") from e
+        else:
+            raise GitlabAPIError(
+                f"Failed to fetch Release for tag {release_note_request.release_tag}. GitLab returned status {e.response.status_code}"
+            ) from e
+
     except requests.RequestException as e:
-        raise Exception(f"Failed to find release by tag: {str(e)}")
+        raise GitlabAPIError("A network error occurred while contacting GitLab") from e
     
 
-async def create_release_note(release_note_request: ReleaseNoteRequest):
+def create_release_note(release_note_request: ReleaseNoteRequest):
     """Create release note by gathering MR documentation"""
     
     try:
         # Get MR commit SHAs based on release type
         if release_note_request.is_first_release:
-            print(f"Processing first release: {release_note_request.release_tag}")
-            mr_in_release = await get_all_mrs_to_main_for_first_release(release_note_request.project_id)
-            print(f"Found {len(mr_in_release)} MRs for first release")
+            logger.info(f"Processing first release: {release_note_request.release_tag}")
+            mr_in_release = get_all_mrs_to_main_for_first_release(release_note_request.project_id)
+            logger.info(f"Found {len(mr_in_release)} MRs for first release")
             
         else:
-            print(f"Processing release between tags: {release_note_request.previous_release_tag} -> {release_note_request.release_tag}")
-            mr_in_release = await get_mrs_between_tags(
+            logger.info(f"Processing release between tags: {release_note_request.previous_release_tag} -> {release_note_request.release_tag}")
+            mr_in_release = get_mrs_between_tags(
                 release_note_request.project_id,
                 release_note_request.previous_release_tag,
                 release_note_request.release_tag
             )
-            print(f"Found {len(mr_in_release)} MRs between tags")
-        
+            logger.info(f"Found {len(mr_in_release)} MRs between tags")
+
         if not mr_in_release:
-            raise Exception(f"No merge requests found for release {release_note_request.release_tag}")
+            raise MRNotFoundForReleaseError(f"No MR found for release {release_note_request.release_tag}")
         
         # Get documentation for these MRs
-        print("Fetching MR documentation from GCS...")
-        documentation = await get_MR_documentation(release_note_request, mr_in_release)
+        logger.info("Fetching MR documentation from GCS...")
+        documentation = get_MR_documentation(release_note_request, mr_in_release)
         
         if not documentation or documentation.get('total_documents', 0) == 0:
-            raise Exception(f"No documentation found for release {release_note_request.release_tag}")
+            raise MRDocumentationNotFoundError(f"No MR documentation found for release {release_note_request.release_tag}")
         
         print(f"Successfully retrieved documentation for {documentation['total_documents']} MRs")
         print(f"Total estimated tokens: {documentation['estimated_tokens']}")
         
         # Process documentation with LLM to generate release note
         print("Processing documentation with LLM...")
-        llm_result = await generate_documentation_with_llm(documentation, release_note_request)
+        llm_result = generate_documentation_with_llm(documentation, release_note_request)
         
         return {
             "status": "success",
@@ -130,12 +138,13 @@ async def create_release_note(release_note_request: ReleaseNoteRequest):
             "mr_sha": list(mr_in_release)
         }
         
-    except Exception as e:
-        print(f"Error creating release note: {str(e)}")
-        raise Exception(f"Failed to create release note: {str(e)}")
+    except MRNotFoundForReleaseError as e:
+        raise
+    except MRDocumentationNotFoundError as e:
+        raise
 
 
-async def get_all_mrs_to_main_for_first_release(project_id: int, limit: int = 50) -> set:
+def get_all_mrs_to_main_for_first_release(project_id: int, limit: int = 50) -> set:
     """
     Get recent MRs to main for first release - only merge commit SHA.
     """
@@ -151,6 +160,7 @@ async def get_all_mrs_to_main_for_first_release(project_id: int, limit: int = 50
     
     try:
         response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()  # Raise an error for bad responses
         if response.status_code == 200:
             merge_requests = response.json()
             
@@ -160,17 +170,24 @@ async def get_all_mrs_to_main_for_first_release(project_id: int, limit: int = 50
                 if mr.get('merge_commit_sha'):  # Only if merge commit exists
                     merge_commits.add(mr['merge_commit_sha'])
             
-            print(f"Found {len(merge_commits)} merge commits from {len(merge_requests)} MRs")
+            logger.info(f"Found {len(merge_commits)} merge commits from {len(merge_requests)} MRs")
             return merge_commits
         else:
             return set()
 
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise GitlabAPIError(f"No MR found in project {project_id}") from e
+        else:
+            raise GitlabAPIError(
+                f"Failed to fetch MR for first release. GitLab returned status {e.response.status_code}"
+            ) from e
+
     except requests.RequestException as e:
-        print(f"Error getting first release MR merge commits: {e}")
-        return set()
+        raise GitlabAPIError("A network error occurred while contacting GitLab") from e
 
 
-async def get_mrs_between_tags(project_id: int, from_tag: str, to_tag: str) -> set:
+def get_mrs_between_tags(project_id: int, from_tag: str, to_tag: str) -> set:
     """
     Get MRs merged between tags - only merge commit SHAs.
     """
@@ -185,6 +202,7 @@ async def get_mrs_between_tags(project_id: int, from_tag: str, to_tag: str) -> s
         headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
         compare_response = requests.get(compare_url, headers=headers, params=compare_params)
+        compare_response.raise_for_status()  # Raise an error for bad responses
         if compare_response.status_code != 200:
             return set()
 
@@ -220,6 +238,13 @@ async def get_mrs_between_tags(project_id: int, from_tag: str, to_tag: str) -> s
         print(f"Found {len(relevant_merge_commits)} merge commits between {from_tag} and {to_tag}")
         return relevant_merge_commits
         
-    except Exception as e:
-        print(f"Error getting MRs between tags: {e}")
-        return set()
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise GitlabAPIError(f"No MR found between tags {from_tag} and {to_tag} in project {project_id}") from e
+        else:
+            raise GitlabAPIError(
+                f"Failed to fetch MR between tags {from_tag} and {to_tag} in project {project_id}. GitLab returned status {e.response.status_code}"
+            ) from e
+
+    except requests.RequestException as e:
+        raise GitlabAPIError("A network error occurred while contacting GitLab") from e
