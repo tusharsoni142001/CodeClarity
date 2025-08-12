@@ -66,10 +66,11 @@ def get_MR_documentation_from_bucket(bucket, common_sha: set):
             if blob_sha and blob_sha in common_sha:
                 content = blob.download_as_text()
                 documents.append({
-                    "sha": blob_sha,
-                    "content": content,
-                    # ... other fields
-                })
+                        "sha": blob_sha,
+                        "filename": blob.name.split("/")[-1],
+                        "content": content,
+                        "token_count": estimate_tokens(content),
+                    })
         return format_for_llm(documents)
     except gcs_exceptions.GoogleAPICallError as e:
         raise GCSOperationError(f"Failed to download documentation from GCS: {e}") from e
