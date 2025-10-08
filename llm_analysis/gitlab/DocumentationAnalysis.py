@@ -133,7 +133,7 @@ def setup_llm_mr_gitlab():
     )
     llm = ChatGroq(
         groq_api_key=GROQ_API_KEY,
-        model_name="groq/compund",
+        model_name="llama-3.3-70b-versatile",
         temperature=0.3,
         http_client=http_client  # Use the custom client with verification disabled
     )
@@ -205,7 +205,7 @@ def setup_llm_release_gitlab():
     )
     llm = ChatGroq(
         groq_api_key=GROQ_API_KEY,
-        model_name="groq/compund",
+        model_name="llama-3.3-70b-versatile",
         # Low temperature is essential for a factual, summary-based task.
         temperature=0.2,
         http_client=http_client
