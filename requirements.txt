@@ -7,3 +7,5 @@ fastapi
 pydantic[email]
 uvicorn
 openai
+google-generativeai
+google-cloud-aiplatform
