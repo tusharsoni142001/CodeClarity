@@ -1,6 +1,7 @@
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import os
+# from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
 from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
 from models.gitlab.ReleaseNoteRequest import ReleaseNoteRequest
 import logging
@@ -56,7 +57,7 @@ def generate_documentation_with_llm(formatted_llm_data: str, request):
             return {
                 "mr_documentation": mr_documentation,
                 "token_usage": token_info,
-                "model_used": "gemini-2.0-flash-exp",
+                "model_used": "gemini-2.5-flash",
                 "generation_successful": True
             }
 
@@ -89,7 +90,7 @@ def generate_documentation_with_llm(formatted_llm_data: str, request):
             return {
                 "release_note": release_note,
                 "token_usage": token_info,
-                "model_used": "gemini-2.0-flash-exp",
+                "model_used": "gemini-2.5-flash",
                 "generation_successful": True
             }
 
@@ -102,11 +103,11 @@ def setup_llm_mr_gitlab():
     
     generation_config = GenerationConfig(
         temperature=0.3,
-        max_output_tokens=8192,
+        max_output_tokens=28192,
     )
     
     model = GenerativeModel(
-        "gemini-2.0-flash-exp",
+        "gemini-2.5-flash",
         generation_config=generation_config
     )
 
@@ -177,7 +178,7 @@ def setup_llm_release_gitlab():
     )
     
     model = GenerativeModel(
-        "gemini-2.0-flash-exp",
+        "gemini-2.5-flash",
         generation_config=generation_config
     )
 

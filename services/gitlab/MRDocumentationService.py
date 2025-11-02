@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+from venv import create
 from pydantic import ValidationError
 import requests
 from dotenv import load_dotenv
@@ -10,6 +11,7 @@ from gcs_storage.MRDocumentationStorage import upload_mr_documentation
 import logging
 from exception.exceptions import *
 from models.gitlab.MRDocumentationRequest import MRDocumentationRequest
+import services.jira_helper as JiraHelper
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +36,14 @@ def process_merge_request_from_cicd(payload_data: dict):
             complete_mr_data = enrich_mr_data_from_api(mr_request, mr_iid)
         else:
             complete_mr_data = mr_request
+        
+        print(payload_data)
+
+        jira_ticket_data = JiraHelper.get_ticket(ticket_key=payload_data.get("jira_key"))
 
         # Process documentation
-        result = create_mr_documentation(complete_mr_data)
+        result = create_mr_documentation(complete_mr_data, jira_ticket_data)
+        print(result["mr_documentation"])
         if result:
             upload_mr_documentation(complete_mr_data, result["mr_documentation"])
         return result
@@ -133,7 +140,7 @@ def enrich_mr_data_from_api(
         ) from e
 
 
-def create_mr_documentation(mr_data):
+def create_mr_documentation(mr_data, jira_ticket_data):
     """
     Main function to create MR documentation by:
     1. Fetching all commits in the MR
@@ -158,7 +165,7 @@ def create_mr_documentation(mr_data):
     )
 
     # Step 4: Send to LLM for documentation generation (placeholder for now)
-    mr_documentation = generate_documentation_with_llm(llm_formatted_data, mr_data)
+    mr_documentation = generate_documentation_with_llm(llm_formatted_data, mr_data, jira_ticket_data)
 
     return {
         "status": "success",
