@@ -1,7 +1,5 @@
 requests
 python-dotenv
-langchain
-langchain-groq
 google-cloud-storage
 fastapi
 pydantic[email]
@@ -9,3 +7,9 @@ uvicorn
 openai
 google-generativeai
 google-cloud-aiplatform
+langchain==0.3.27
+langchain-core==0.3.79
+langchain-groq==0.3.8
+langchain-text-splitters==0.3.11
+groq==0.33.0
+xhtml2pdf==0.2.17
