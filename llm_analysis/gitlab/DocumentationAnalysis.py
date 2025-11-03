@@ -1,3 +1,4 @@
+from __future__ import annotations
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.exceptions import LangChainException
@@ -15,13 +16,14 @@ from groq import Groq
 
 from models.jira_model import JiraTicket
 
+
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-def generate_documentation_with_llm(formatted_llm_data: str, request, jira_ticket_data: Optional['JiraTicket'] = None):
+def generate_documentation_with_llm(formatted_llm_data: str, request, jira_ticket_data: Optional[JiraTicket] = None):
     """
     Generate documentation using LLM based on formatted commit data.
     This function prepares the prompt and calls the LLM to generate documentation.
