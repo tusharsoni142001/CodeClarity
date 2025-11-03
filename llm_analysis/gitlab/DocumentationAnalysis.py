@@ -541,7 +541,13 @@ def setup_llm_release_notes():
 
     ## YOUR TASK: Generate Executive Release Note
 
-    **Critical Instruction:** Your entire release note must be built EXCLUSIVELY from the source material provided above. Do not invent information, add unsupported claims, or speculate on impacts.
+    **CRITICAL INSTRUCTION FOR LEADERSHIP AUDIENCE:**
+    - This release note is EXCLUSIVELY for C-suite, VPs, and business stakeholders
+    - DO NOT include internal checklists, staging details, testing workflows, or DevOps procedures
+    - DO NOT mention "In Progress", "Staging verification", or internal process status
+    - Focus ONLY on business impact, strategic value, and production-readiness
+    - Assume readers care about: business outcomes, risk to operations, and affected teams
+    - Assume readers DO NOT care about: staging environments, CI/CD details, internal verification steps
 
     **Synthesis Requirement:** This is NOT copy-paste. You must:
     - Identify patterns across MRs (e.g., "3 performance improvements", "2 features for sales team")
@@ -591,8 +597,8 @@ def setup_llm_release_notes():
 
     ---
 
-    ### 4. CATEGORIZED CHANGES
-    Read through all MR summaries and group them by **business impact category** (NOT just technical type).
+    ### 4. CATEGORIZED CHANGES (Business-Focused)
+    Read through all MR summaries and group them by **business impact category** (NOT technical type).
 
     #### 🎯 **New Capabilities**
     Major new features that enable users to do something previously impossible.
@@ -626,14 +632,6 @@ def setup_llm_release_notes():
     - Productivity gain: [What work is no longer needed]
     - Teams impacted: [Team 1, Team 2]
 
-    #### 🔧 **Infrastructure & Technical Improvements**
-    Changes to deployment, CI/CD, or backend systems that improve maintainability or scalability.
-
-    Format:
-    - **[Infrastructure Area]:** [Improvement made]
-    - Scope: [What systems affected]
-    - Benefit: [Why this matters to operations/reliability]
-
     ---
 
     ### 5. SCOPE & AFFECTED SYSTEMS
@@ -651,86 +649,41 @@ def setup_llm_release_notes():
 
     ---
 
-    ### 6. RISK ASSESSMENT & ROLLOUT GUIDANCE
+    ### 6. RISK & MITIGATION SUMMARY (For Decision-Making)
 
-    **Release Risk Level:** [LOW / MEDIUM / HIGH]
-    Justify based on:
-    - Number of critical systems changed
-    - Breadth of user impact
-    - Testing status
-    - Known issues or limitations
+    **Production Risk Level:** [LOW / MEDIUM / HIGH]
 
-    **Testing Status:**
-    - Staging: [✅ Complete / ⏳ In Progress / ❌ Issues Found]
-    - Production: [✅ Ready / ⏳ Partial / ❌ Not Recommended]
+    **Critical Risks & Mitigations:**
+    - [Risk]: [Mitigation in place]
+    - [Risk]: [Mitigation in place]
 
-    **Critical Risks (from MR summaries):**
+    Format for each risk:
+    | Risk | Mitigation Strategy | Impact on Business |
+    |------|-------------------|------------------|
+    | [Risk] | [How mitigated] | [Business impact if it occurs] |
 
-    | Risk | Likelihood | Impact | Mitigation |
-    |------|-----------|--------|-----------|
-    | [Risk] | High/Med/Low | High/Med/Low | [Mitigation] |
-
-    **Known Limitations & Issues:**
-    - [Limitation 1]: [Workaround or timeline for fix]
-    - [Known Issue 1]: [Expected behavior or resolution plan]
+    **Known Limitations:**
+    - [Limitation 1]: [User impact / Workaround]
 
     If none: State "None identified"
 
-    ---
-
-    ### 7. DEPLOYMENT & UPGRADE GUIDANCE
-
-    **Recommended Rollout Strategy:**
-    - [Strategy]: [Rationale based on risk level]
-    - Estimated duration: [Time estimate]
-    - Rollback plan: [How to rollback if issues occur]
-
-    **User Communications:**
-    - Teams affected: [List teams and what they should expect]
-    - Actions required: [Do users need to do anything?]
-    - Training needs: [Do any user groups need training?]
+    **Production Readiness:** [Ready for Production / Not Recommended / Conditional]
+    - [Brief rationale based on risk and testing completeness from MR data]
 
     ---
 
-    ### 8. TIMELINE & MILESTONES
+    ### 7. STAKEHOLDER IMPACT & RECOMMENDED ACTIONS
 
-    **Status:** [Released / Ready for Release / In Testing / Blocked]
+    **Affected Teams & What They Should Expect:**
+    - [Team 1]: [What changes for them, what to watch for]
+    - [Team 2]: [What changes for them, what to watch for]
 
-    - Staging verification: [✅ Complete / ⏳ In Progress]
-    - Production readiness: [✅ Ready / ⏳ Pending]
-    - Expected production release: [Date]
-    - Blockers: [List or "None"]
+    **Actions Required from Teams:**
+    - [Team 1]: [Specific actions, or "None"]
+    - [Team 2]: [Specific actions, or "None"]
 
-    ---
-
-    ### 9. SUPPORT & ROLLBACK PLAN
-
-    **Who to Contact for Issues:**
-    - Performance issues: [Team/Slack channel]
-    - User-facing issues: [Team/Slack channel]
-    - Deployment rollback: [Process and approvers]
-
-    **Rollback Procedure:**
-    - Trigger: [What conditions warrant rollback?]
-    - Procedure: [Step-by-step rollback process]
-    - Time to rollback: [Estimated time]
-
-    ---
-
-    ### 10. FINAL VERIFICATION CHECKLIST
-
-    Before outputting final release note, verify:
-
-    1. ☐ **Every change traced to source:** Each bullet point directly corresponds to one or more MR summaries
-    2. ☐ **No invented information:** Did not add features, metrics, or impacts not in source material
-    3. ☐ **Quantified where possible:** All metrics come from MR summaries
-    4. ☐ **Strategic narrative:** Connects individual changes to overall release theme
-    5. ☐ **Executive ready:** Written for VP/CTO level; clear business outcomes
-    6. ☐ **Actionable guidance:** Deployment, rollout, and risk guidance is specific
-    7. ☐ **Stakeholder focused:** Clear on which teams benefit and which are affected
-    8. ☐ **Testing status clear:** If in testing phase, explicitly states readiness level
-    9. ☐ **Risk assessed:** Aggregated risks from MRs; clear go/no-go recommendation
-    10. ☐ **Structured for reuse:** Could be forwarded to executives, support teams, and operations as-is
+    **Training or Communication Needed:**
+    - [Area]: [What communication is needed, or "None"]
 
     ---
 
@@ -753,10 +706,10 @@ def setup_llm_release_notes():
     - User count: Aggregate number of users benefiting
     - Adoption blockers removed: Identify features that were blocked before
 
-    **Risk Aggregation:**
+    **Risk Aggregation (Production-Only):**
     - Critical risks: Flag any risks marked "High impact" in MRs
-    - Testing gaps: Identify if any critical system paths untested
-    - Rollback complexity: Assess if rollback is simple or complex
+    - Mitigations: What safeguards are in place
+    - Business impact: What happens if this goes wrong
 
     ---
 
@@ -767,22 +720,26 @@ def setup_llm_release_notes():
     - Use quantifiable metrics when available
     - Be clear about strategic importance
     - Focus on risk and readiness, not implementation details
+    - Assume zero technical knowledge of internal processes
 
-    **For Product Managers:**
-    - Balance strategic goals with user benefits
-    - Show how this release advances product roadmap
-    - Highlight user feedback addressed
-    - Note what's deferred to future releases
+    **What to EXCLUDE for Leadership:**
+    - ❌ Staging environment details
+    - ❌ CI/CD pipeline specifics
+    - ❌ Internal verification checklists
+    - ❌ DevOps procedures
+    - ❌ Testing methodologies
+    - ❌ Status labels like "In Progress" or "Pending"
 
-    **For Operations/DevOps:**
-    - Clear deployment instructions
-    - Risk and rollback information
-    - Resource requirements and scaling
-    - Monitoring and alerting setup
+    **What to INCLUDE for Leadership:**
+    - ✅ Business outcomes
+    - ✅ Team productivity gains
+    - ✅ Risk to business operations
+    - ✅ Production readiness (Yes/No/Conditional)
+    - ✅ Affected teams and their actions
 
     ---
 
-    ## OUTPUT STRUCTURE
+    ## OUTPUT STRUCTURE (Leadership-Ready)
 
     Return release note in this exact order:
     1. Release Header
@@ -790,11 +747,17 @@ def setup_llm_release_notes():
     3. Key Metrics & Impact
     4. Categorized Changes
     5. Scope & Affected Systems
-    6. Risk Assessment & Rollout Guidance
-    7. Deployment & Upgrade Guidance
-    8. Timeline & Milestones
-    9. Support & Rollback Plan
+    6. Risk & Mitigation Summary
+    7. Stakeholder Impact & Recommended Actions
+
+    **DO NOT INCLUDE:**
+    - ❌ FINAL VERIFICATION CHECKLIST
+    - ❌ TIMELINE & MILESTONES with staging details
+    - ❌ SUPPORT & ROLLBACK PLAN (too technical for leadership)
+    - ❌ Deployment procedures
+    - ❌ Testing status
     """
+    
     prompt = PromptTemplate(
             input_variables=[
                 "release_tag",
