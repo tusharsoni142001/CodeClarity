@@ -7,7 +7,7 @@ from models.gitlab.ReleaseNoteRequest import ReleaseNoteRequest
 from gcs_storage.ReleaseNoteStorage import *
 from exception.exceptions import GitlabAPIError, MRDocumentationNotFoundError, MRNotFoundForReleaseError
 # from llm_analysis.gitlab.ReleasNoteAnalysis_openAI import generate_release_note_with_llm
-from llm_analysis.gitlab.DocumentationAnalysis_gemini import generate_documentation_with_llm
+from llm_analysis.gitlab.DocumentationAnalysis import generate_documentation_with_llm
 
 load_dotenv()
 
