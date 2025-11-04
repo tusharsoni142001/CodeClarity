@@ -4,7 +4,7 @@ from venv import create
 from pydantic import ValidationError
 import requests
 from dotenv import load_dotenv
-from llm_analysis.gitlab.DocumentationAnalysis import generate_documentation_with_llm
+from llm_analysis.gitlab.DocumentationAnalysis_gemini import generate_documentation_with_llm
 # from llm_analysis.gitlab.DocumentationAnalysis_gemini import generate_documentation_with_llm
 from models.gitlab.CommitModels import CommitResponse
 from gcs_storage.MRDocumentationStorage import upload_mr_documentation
